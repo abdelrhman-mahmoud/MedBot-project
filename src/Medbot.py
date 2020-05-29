@@ -13,12 +13,12 @@ import wikipedia
 import nltk
 from nltk.tokenize import sent_tokenize
 from nltk.tokenize import word_tokenize
+import re
 
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 import random
-
-
+import db
 
 
 # this function to remove stop words from text
@@ -42,27 +42,27 @@ def stemming(text):
     return empty
 
 def sorry():
-    print("I'm sorry I could not understand that. Let's try again.")
+    messages = ["I'm sorry I could not understand that. Let's try again.",'Are you a Male or a Female?']
+    return messages
 
 #great function 
-
+def ask_symptoms():
+    messages = ['Type your symptoms']
+    return messages
 def greet():
-    greeting=['hi','hello']
-    
-    for i in greeting:
-        
+    greeting=['hi','hello']  
+    for i in greeting: 
         gr = random.choice(greeting)
-    print('Medbot :' , gr)
-
+    messages = [gr,"I'm MedicalBot, your personal health assistant.","I can do that for you : \n 1-diagnoses of illnesses. \n 2-Book intensive care unit.","PLZ select number of service that you want :"]
+    return messages
 # greet()
 
 def asknames():
     askname= ["what's your name ?  ",'your name  ? ']
     for i in askname:
         na=random.choice(askname)
-    print ('Medbot : ' , na)
-    inp = input()
-    return inp
+    messages = [na]
+    return messages
     
 # asknames()
 
@@ -94,9 +94,8 @@ def getName(text):
     for i in chunked:
         if i != ('name','NN','VB','DT','IN','VBD','JJ'):
             name = i
-
-    print('Medbot : ' ,'welcome',name[0])
-    return name[0]
+    messages = f"Welcome, {name[0]}"
+    return messages
 
 
 
@@ -104,29 +103,32 @@ def getName(text):
 # yourname =asknames()
 # myname=getName(yourname)
 
-def askAges():
+def askAges(uuid):
    askage=['how old are you  ? ',"i'd like to know your age ? ",'tell me your age ? ']
    for i in askage:
        age=random.choice(askage)
        
-   print ('Medbot : ' , age)
-   inp = input()
-   return inp
+   messages = [getName(db.get_name(uuid)),age]
+   return messages
+   #inp = input()
+   #return inp
        
 #askAge()
     
-def getAge(str):
+def getAge(uuid,inage):
 
-    filtered = stopWords(str)
+    filtered = stopWords(inage)
     
     for i in filtered:
-       filtered = stopWords(str)
+       filtered = stopWords(inage)
     for i in filtered:
         try:
             age = int(i)
         except Exception:
             continue
-    print(myname,' : ' ,age)
+    #print(myname,' : ' ,age)
+    messages = [str(db.get_name(uuid))+":"+str(age),askGender()]
+    return messages
 
 # yourAge = askAges()
 # age = getAge(yourAge)
@@ -134,9 +136,8 @@ def getAge(str):
 #this function to ask user about his gender
     
 def askGender():
-    print('Are you a Male or a Female?')
-    inp = input()
-    return inp
+    messages = 'Are you a Male or a Female?'
+    return messages
 
 # this function to return gender of user  
 def getGender(text):
@@ -158,7 +159,7 @@ def getGender(text):
         
     
 
-df = pd.read_csv('C:\\Users\\M\Desktop\\my project\\Training.csv')
+df = pd.read_csv('datasets\diseasedata.csv')
 df.isnull().sum().sort_values(ascending=False)
 df['prognosis'].value_counts(normalize = True)
 df.dtypes.unique()
@@ -202,12 +203,65 @@ CM = confusion_matrix(y_test, y_pred)
 # df['prognosis'].value_counts(normalize = False).plot.scatter()
 # plt.subplots_adjust(left = 0.9, right = 2 , top = 2, bottom = 1)
 
-
-def getdisease():
-    userinputs=str(input('type your symptoms : '))
+#auto correction
+Replacement_pattern ={"skin rash":"skin_rash","sken rash":"skin_rash","skin rach":"skin_rash",
+                       "itshing":"itching","etching":"itching","itcing":"itching",
+                       "sneezing":"continuous_sneezing","sneez":"continuous_sneezing","continuous sneazing":"continuous_sneezing",
+                       "shevering":"shivering","shiver":"shivering","shavering":"shivering",
+                       "chells":"chills","challs":"chills","chils":"chills",
+                       "stomach pain" :"stomach_pain","pain in stomache":"stomach_pain","pian in my stomach":"stomach_pain",
+                       "muscle wasting":"muscle_wasting","muscle wast":"muscle_wasting","wasting muscle":"muscle_wasting","wast muscle":"muscle_wasting",
+                       "cold hands":"cold_hands_and_feets","cold hand and feet":"cold_hands_and_feets","cold feets":"cold_hands_and_feets",
+                       "weight gain":"weight_gain","weightgain":"weight_gain",
+                       "weight loss":"weight_loss","weightloss":"weight_loss",
+                       "couf":"cough",
+                       "patches in throat":"patches_in_throat","patche in throat":"patches_in_throat","patche":"patches_in_throat",
+                       "irregular sugar level":"irregular_sugar_level","irregular sugar":"irregular_sugar_level","sugar irregular":"irregular_sugar_level",
+                       "high fever":"high_fever","fever is high":"high_fever",
+                       "breathless":"breathlessness","low breath":"breathlessness","low in breath":"breathlessness","breathing less":"breathlessness",
+                       "headeche":"headache","head mild fever":"headache","ashe":"headache",
+                       "loss of appetite":"loss_of_appetite","loss in appetite":"loss_of_appetite",
+                       "back pain":"back_pain","pain in back":"back_pain","pain in my back":"back_pain","pain back":"back_pain",
+                       "acute liver failure":"acute_liver_failure",
+                       "runny nose":"runny_nose","nose is runy":"runny_nose","nose is running":"runny_nose",
+                       "chest pain":"chest_pain","pain in chest":"chest_pain","pain chest":"chest_pain",
+                       "fast heart rate":"fast_heart_rate","fast heart":"fast_heart_rate","fasting heart":"fast_heart_rate",
+                       "neck pain":"neck_pain","pain in neck":"neck_pain",
+                       "family history":"family_history",
+                       "history of alcohol consumption":"history_of_alcohol_consumption","history of alcohol":"history_of_alcohol_consumption"
+                     
     
-    token = [str(x) for x in userinputs.split()]
-    # print (token)
+    }
+
+
+def expand_contractions(sentence, text): 
+     
+    contractions_pattern = re.compile('({})'.format('|'.join(text.keys())),  
+                                      flags=re.IGNORECASE|re.DOTALL) 
+    def expand_match(contraction): 
+        match = contraction.group(0) 
+        first_char = match[0] 
+        expanded_contraction = text.get(match) if text.get(match) else text.get(match.lower())                        
+        expanded_contraction = first_char+expanded_contraction[1:] 
+        return expanded_contraction 
+         
+    expanded_sentence = contractions_pattern.sub(expand_match, sentence) 
+    return expanded_sentence 
+ 
+
+def splitting(text): 
+    return ([i for item in text for i in item.split()]) 
+
+
+
+def getdisease(symptoms):
+    expanded_corpus =[expand_contractions(txt, Replacement_pattern)  
+                     for txt in sent_tokenize(symptoms)]
+    words=splitting(expanded_corpus)
+    
+
+    
+    token = [str(x) for x in words]
     a=[]
     compare=[item for item in token if item in x.columns]
       
@@ -218,37 +272,29 @@ def getdisease():
         elif i not in compare:
             a.append(0)
         else:
-            sorry()
-            getdisease()
+            return sorry()
             
-        
     y_diagnosis = knn.predict([a])
     y_pred_2 = knn.predict_proba([a])
-    print(('i predict you have  %s  disease, confidence score of : = %s') %(y_diagnosis[0],y_pred_2.max()* 100),'%' )
-    
-    print ('--------------------------------------------------------------')
-    
+    # prediction = f"i predict you have {y_diagnosis[0]} disease, confidence score of : {y_pred_2.max()* 100}%"
+    # prediction = (('i predict you have  %s  disease, confidence score of : = %s') %(y_diagnosis[0],y_pred_2.max()* 100),'%' )
+        
     wiki=str(y_diagnosis[0])
-    print ('this is info about your disease :')
-    print ('\n',wikipedia.summary(wiki, sentences=2))
+    #print ('this is info about your disease :')
+    #print ('\n',wikipedia.summary(wiki, sentences=2))
     
     #print(('Name = %s , Age : = %s') %(i_name,i_age))
-    
-    print (' \n\n note : \n Do not depend on this result .. Please see a doctor ')
 
-    return
+    messages = [f"i predict you have {y_diagnosis[0]} disease, confidence score of : {y_pred_2.max()* 100}%",'this is info about your disease :',wikipedia.summary(wiki, sentences=2)]
+    return messages
 
+def note():
+    messages=['note : \n Do not depend on this result .. Please see a doctor']
+    return messages
 
+           
 
-            
-    
-
-#start conversation :the point that acully start with 
-greet()
-print("I'm MedicalBot, your personal health assistant.")
-print("I can do that for you : \n 1-diagnoses of illnesses. \n 2-Book intensive care unit. ")
-inpp=int(input('PLZ select number of service that you want : '))
-
+"""
 if inpp == 1:
     yourname = asknames()
     myname=getName(yourname)
@@ -267,7 +313,7 @@ if inpp == 1:
     
 elif inpp==2:
      print ('you are choosed 2')
-
+"""
 
 
 
