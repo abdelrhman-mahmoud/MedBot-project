@@ -9,6 +9,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import KFold
+from sklearn.tree import DecisionTreeClassifier
+
+
+
 import wikipedia
 import nltk
 from nltk.tokenize import sent_tokenize
@@ -169,15 +174,39 @@ y = df['prognosis']
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.33, random_state=42)
 x_test.shape
 
+DTC = DecisionTreeClassifier(criterion='entropy',)
 
-knn=KNeighborsClassifier(n_neighbors=5)
-knn.fit(x_train,y_train)
-knn.predict(x_test)
-# print ('scores for train= ',knn.score(x_test, y_test))
-# print('scores for test : ' , knn.score(x_test, y_test))
-y_pred = knn.predict(x_test)
+
+# knn=KNeighborsClassifier()
+# knn.fit(x_train,y_train)
+# knn.predict(x_test)
+# # print ('scores for train= ',knn.score(x_test, y_test))
+# # print('scores for test : ' , knn.score(x_test, y_test))
+# y_pred = knn.predict(x_test)
 # print('accuracy_score:',accuracy_score(y_pred,y_test))
 
+test_scores={}
+train_scores={}
+for i in range(2,4,2):
+    kf = KFold(n_splits = i)
+    sum_train = 0
+    sum_test = 0
+    data = df
+    for train,test in kf.split(data):
+        train_data = data.iloc[train,:]
+        test_data = data.iloc[test,:]
+        x_train = train_data.drop(["prognosis"],axis=1)
+        y_train = train_data['prognosis']
+        x_test = test_data.drop(["prognosis"],axis=1)
+        y_test = test_data["prognosis"]
+        algo_model = DTC.fit(x_train,y_train)
+        sum_train += DTC.score(x_train,y_train)
+        y_pred = DTC.predict(x_test)
+        sum_test += accuracy_score(y_test,y_pred)
+    average_test = sum_test/i
+    average_train = sum_train/i
+    test_scores[i] = average_test
+    train_scores[i] = average_train
 
 
 #for check only
@@ -274,8 +303,8 @@ def getdisease(symptoms):
         else:
             return sorry()
             
-    y_diagnosis = knn.predict([a])
-    y_pred_2 = knn.predict_proba([a])
+    y_diagnosis = DTC.predict([a])
+    y_pred_2 = DTC.predict_proba([a])
     # prediction = f"i predict you have {y_diagnosis[0]} disease, confidence score of : {y_pred_2.max()* 100}%"
     # prediction = (('i predict you have  %s  disease, confidence score of : = %s') %(y_diagnosis[0],y_pred_2.max()* 100),'%' )
         
@@ -292,7 +321,12 @@ def note():
     messages=['note : \n Do not depend on this result .. Please see a doctor']
     return messages
 
-           
+getdisease('headache')
+
+            
+    
+
+#start conversation :the point that acully start with 
 
 """
 if inpp == 1:
