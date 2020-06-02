@@ -1,3 +1,11 @@
+
+"""
+
+@author: abdo
+email : abdo.elsaadny74@gmail.com 
+
+"""
+
 #import libraries
 import pandas as pd
 import seaborn as sns
@@ -11,8 +19,6 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold
 from sklearn.tree import DecisionTreeClassifier
-
-
 
 import wikipedia
 import nltk
@@ -28,23 +34,24 @@ import db
 
 # this function to remove stop words from text
 # stop words: words that have no meaning in english like [the,and ,...]  
+def stemming(text):
+    wt=word_tokenize(text)
+    ps = PorterStemmer()
+    word=[]
+    for i in wt:
+        x=ps.stem(i)
+        word.append(x)
+    return word
+
 def stopWords(text):
     #text is a sentence
-    a = set(stopwords.words('english'))
+    englishword = set(stopwords.words('english'))
     filtered = []
     words = word_tokenize(text)
     for i in words:
-        if i not in a:
+        if i not in englishword:
             filtered.append(i)
     return filtered
-#this function to return the stem word from text
-def stemming(text):
-    #text could be a sent or word
-    ps = PorterStemmer()
-    empty = []
-    for w in text:
-        empty.append(w)
-    return empty
 
 def sorry():
     messages = ["I'm sorry I could not understand that. Let's try again.",'Are you a Male or a Female?']
@@ -74,9 +81,9 @@ def asknames():
 def getName(text):
    
     filtered = stopWords(text)
-    stemmed = stemming(filtered)
 
-    tag = nltk.pos_tag(stemmed)
+
+    tag = nltk.pos_tag(filtered)
    
     noun=[]
     for i in range(len(tag)):
@@ -99,8 +106,10 @@ def getName(text):
     for i in chunked:
         if i != ('name','NN','VB','DT','IN','VBD','JJ'):
             name = i
-    messages = f"Welcome, {name[0]}"
+    messages = f"Welcome {name[0]}"
     return messages
+
+# getName("my name is abdelrhman ")
 
 
 
@@ -161,9 +170,90 @@ def getGender(text):
 
 # askGender()
 # getGender()
+
+# -----------------------------------------------------------------------------
+class Natural_language_processing:
+
+    def __init__(self):
+       
+        self.info = []
+        
+        
+        
+    def extract (self,text):
+        stopWords(text)
+        token=stemming(text)
+
+        tagged=nltk.pos_tag(token)
+        
+        chunkgram=r"""chunk : {<.*>+}
+                        		}<VB.?|IN|DT|TO|NNS|CC>+{
+                    
+                    
+                                
+                                
+                                
+                 chunk:
+                    {<DT><NN>+<VBG>|<DT><NN|NNS>+}
+                    }<DT>{
+                    
+                    chunk:
+                    {<NN><IN><DT>}
+                    }<NN>{
+                    }<DT>{
+                    chunk:
+                    {<VB|VBN><RP|IN>}
+                    }<VB>{
+                    }<VBN>{
+                    chunk:
+                    {<CD>}
+                                
+                          chunk:
+                    {<WP><VBZ><DT><NN><NN><IN><NNP|NN>+}
+                    }<WP>{
+                    }<VBZ>{
+                    }<DT>{
+                    }<IN>{
+                    <NN>}{<NN>
+        
+        
+                          chunk:
+                    {<JJ>?<NN>+}
+                    <JJ>}{<NN>
+                    <NN>}{<NN>
+                                
+                                
+                                
+                                
+                                """
+        
+        self.info=[]
+        chunkparser=nltk.RegexpParser(chunkgram)
+        chunked=chunkparser.parse(tagged)
+        # chunked.draw() 
+    
+    
+    
+        for element in chunked:
+            if hasattr(element, 'label'):
+                temp = ' '.join(e[0] for e in element)
+                self.info.append(temp)
+            
+        return self.info
+    
+NLP=Natural_language_processing()
+             
+
+# Function to convert the list to string    
+def listToString(text):  
+    
+    str1 = " " 
+    
+    return (str1.join(text)) 
+
         
     
-
+# -----------------------------------------------------------------------------
 df = pd.read_csv('datasets\diseasedata.csv')
 df.isnull().sum().sort_values(ascending=False)
 df['prognosis'].value_counts(normalize = True)
@@ -248,7 +338,7 @@ Replacement_pattern ={"skin rash":"skin_rash","sken rash":"skin_rash","skin rach
                        "irregular sugar level":"irregular_sugar_level","irregular sugar":"irregular_sugar_level","sugar irregular":"irregular_sugar_level",
                        "high fever":"high_fever","fever is high":"high_fever",
                        "breathless":"breathlessness","low breath":"breathlessness","low in breath":"breathlessness","breathing less":"breathlessness",
-                       "headeche":"headache","head mild fever":"headache","ashe":"headache",
+                       "headeche":"headache","head mild fever":"headache","ashe":"headache","headach":"headache",
                        "loss of appetite":"loss_of_appetite","loss in appetite":"loss_of_appetite",
                        "back pain":"back_pain","pain in back":"back_pain","pain in my back":"back_pain","pain back":"back_pain",
                        "acute liver failure":"acute_liver_failure",
@@ -284,12 +374,14 @@ def splitting(text):
 
 
 def getdisease(symptoms):
+    
+    l=NLP.extract(symptoms)
+    lts=listToString(l)
+    
     expanded_corpus =[expand_contractions(txt, Replacement_pattern)  
-                     for txt in sent_tokenize(symptoms)]
+                     for txt in sent_tokenize(lts)]
     words=splitting(expanded_corpus)
-    
-
-    
+      
     token = [str(x) for x in words]
     a=[]
     compare=[item for item in token if item in x.columns]
@@ -321,7 +413,7 @@ def note():
     messages=['note : \n Do not depend on this result .. Please see a doctor']
     return messages
 
-getdisease('headache')
+# getdisease('i have a headache and feeling a high fever')
 
             
     
@@ -348,25 +440,3 @@ if inpp == 1:
 elif inpp==2:
      print ('you are choosed 2')
 """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-
