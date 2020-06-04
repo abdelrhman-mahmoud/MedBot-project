@@ -30,6 +30,8 @@ from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 import random
 import db
+from fuzzywuzzy import process
+
 
 
 # this function to remove stop words from text
@@ -264,7 +266,8 @@ y = df['prognosis']
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.33, random_state=42)
 x_test.shape
 
-DTC = DecisionTreeClassifier(criterion='entropy',)
+DTC = DecisionTreeClassifier(criterion='entropy', max_depth=10,random_state=80)
+
 
 
 # knn=KNeighborsClassifier()
@@ -322,34 +325,26 @@ CM = confusion_matrix(y_test, y_pred)
 # df['prognosis'].value_counts(normalize = False).plot.scatter()
 # plt.subplots_adjust(left = 0.9, right = 2 , top = 2, bottom = 1)
 
-#auto correction
-Replacement_pattern ={"skin rash":"skin_rash","sken rash":"skin_rash","skin rach":"skin_rash",
-                       "itshing":"itching","etching":"itching","itcing":"itching",
-                       "sneezing":"continuous_sneezing","sneez":"continuous_sneezing","continuous sneazing":"continuous_sneezing",
-                       "shevering":"shivering","shiver":"shivering","shavering":"shivering",
-                       "chells":"chills","challs":"chills","chils":"chills",
-                       "stomach pain" :"stomach_pain","pain in stomache":"stomach_pain","pian in my stomach":"stomach_pain",
-                       "muscle wasting":"muscle_wasting","muscle wast":"muscle_wasting","wasting muscle":"muscle_wasting","wast muscle":"muscle_wasting",
+# -----------------------------------auto correction----------------------------
+Replacement_pattern ={"rash skin":"skin_rash","skin rash":"skin_rash",
+                    
+                       " sneez":"continuous_sneez","continuous sneaz":"continuous_sneezing",
+                       
+                       "stomach pain" :"stomach_pain","pain stomache":"stomach_pain",
+                       "muscle wast":"muscle_wasting","wast muscle":"muscle_wasting",
                        "cold hands":"cold_hands_and_feets","cold hand and feet":"cold_hands_and_feets","cold feets":"cold_hands_and_feets",
-                       "weight gain":"weight_gain","weightgain":"weight_gain",
-                       "weight loss":"weight_loss","weightloss":"weight_loss",
-                       "couf":"cough",
-                       "patches in throat":"patches_in_throat","patche in throat":"patches_in_throat","patche":"patches_in_throat",
-                       "irregular sugar level":"irregular_sugar_level","irregular sugar":"irregular_sugar_level","sugar irregular":"irregular_sugar_level",
-                       "high fever":"high_fever","fever is high":"high_fever",
-                       "breathless":"breathlessness","low breath":"breathlessness","low in breath":"breathlessness","breathing less":"breathlessness",
-                       "headeche":"headache","head mild fever":"headache","ashe":"headache","headach":"headache",
-                       "loss of appetite":"loss_of_appetite","loss in appetite":"loss_of_appetite",
-                       "back pain":"back_pain","pain in back":"back_pain","pain in my back":"back_pain","pain back":"back_pain",
-                       "acute liver failure":"acute_liver_failure",
-                       "runny nose":"runny_nose","nose is runy":"runny_nose","nose is running":"runny_nose",
-                       "chest pain":"chest_pain","pain in chest":"chest_pain","pain chest":"chest_pain",
-                       "fast heart rate":"fast_heart_rate","fast heart":"fast_heart_rate","fasting heart":"fast_heart_rate",
-                       "neck pain":"neck_pain","pain in neck":"neck_pain",
-                       "family history":"family_history",
-                       "history of alcohol consumption":"history_of_alcohol_consumption","history of alcohol":"history_of_alcohol_consumption"
-                     
-    
+                       "weight gain":"weight_gain","gain weight":"weight_gain",
+                       "weight loss":"weight_loss","loss weight":"weight_loss",
+                       
+                       "high fever":"high_fever","fever high":"high_fever",
+                       "breathless":"breathlessness","low breath":"breathlessness",
+                       "head mild fever":"headache","ashe":"headache",
+                       "back pain":"back_pain","pain back":"back_pain",
+                       "runny nose":"runny_nose","nose runy":"runny_nose",
+                       "chest pain":"chest_pain","pain chest":"chest_pain",
+                       "fast heart ":"fast_heart_rate","fast heart rate":"fast_heart_rate",
+                        "neck pain":"neck_pain","pain neck":"neck_pain"
+
     }
 
 
@@ -371,18 +366,43 @@ def expand_contractions(sentence, text):
 def splitting(text): 
     return ([i for item in text for i in item.split()]) 
 
+with open("datasets\sym.txt","r") as f :
+    sym=f.read().split('\n')
+
+def match(query,choise,limit=1):
+    result=process.extract(query,choise,limit=limit)
+    return result
+
+
+
+def fuzzy(text):
+    text1=word_tokenize(text)
+    correction=[]
+    for i in text1:
+        a=match(i,sym)
+        if (a[0][1]<80):
+            continue
+        else:
+            correction.append(a[0][0])
+    return correction
+# ---------------------------------end autocorrection-------------------------------
 
 
 def getdisease(symptoms):
     
     l=NLP.extract(symptoms)
     lts=listToString(l)
+    # print (lts)
     
     expanded_corpus =[expand_contractions(txt, Replacement_pattern)  
                      for txt in sent_tokenize(lts)]
     words=splitting(expanded_corpus)
+    lts1=listToString(words)
+    # print(lts1)
+    correction_word=fuzzy(lts1)
+    # print(correction_word)
       
-    token = [str(x) for x in words]
+    token = [str(x) for x in correction_word]
     a=[]
     compare=[item for item in token if item in x.columns]
       
@@ -413,7 +433,7 @@ def note():
     messages=['note : \n Do not depend on this result .. Please see a doctor']
     return messages
 
-# getdisease('i have a headache and feeling a high fever')
+getdisease('cough and brethless and high fever')
 
             
     
