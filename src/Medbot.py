@@ -1,20 +1,17 @@
-
 """
-
 @author: abdo
 email : abdo.elsaadny74@gmail.com 
-
 """
 
 #import libraries
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import numpy as np
+# import seaborn as sns
+# import matplotlib.pyplot as plt
+# import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
+# from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold
@@ -56,7 +53,7 @@ def stopWords(text):
     return filtered
 
 def sorry():
-    messages = ["I'm sorry I could not understand that. Let's try again.",'Are you a Male or a Female?']
+    messages = ["I'm sorry I could not understand that. Let's try again."]
     return messages
 
 #great function 
@@ -66,10 +63,19 @@ def ask_symptoms():
 def greet():
     greeting=['hi','hello']  
     for i in greeting: 
-        gr = random.choice(greeting)
-    messages = [gr,"I'm MedicalBot, your personal health assistant.","I can do that for you : \n 1-diagnoses of illnesses. \n 2-Book intensive care unit.","PLZ select number of service that you want :"]
+        gr = random.choice (greeting)
+    messages = [gr,"I'm MedicalBot, your personal health assistant."]
     return messages
 # greet()
+    
+def chosing ():
+    messages1="I can do that for you :"
+    messages2="1-diagnoses of illnesses."
+    messages3="2-Book intensive care unit."
+    messages4="PLZ select number of service that you want :"
+    return messages1 , messages2  , messages3 , messages4
+    
+    
 
 def asknames():
     askname= ["what's your name ?  ",'your name  ? ']
@@ -128,8 +134,7 @@ def askAges(uuid):
    return messages
    #inp = input()
    #return inp
-       
-#askAge()
+# askAges()
     
 def getAge(uuid,inage):
 
@@ -433,7 +438,7 @@ def note():
     messages=['note : \n Do not depend on this result .. Please see a doctor']
     return messages
 
-getdisease('cough and brethless and high fever')
+# getdisease('cough and brethless and high fever')
 
             
     
@@ -444,7 +449,6 @@ getdisease('cough and brethless and high fever')
 if inpp == 1:
     yourname = asknames()
     myname=getName(yourname)
-
     yourAge = askAges()
     age = getAge(yourAge)
     
@@ -460,3 +464,43 @@ if inpp == 1:
 elif inpp==2:
      print ('you are choosed 2')
 """
+
+
+
+if __name__=='__main__':
+    print (greet())
+    print (chosing())
+    inpp=str (input())
+    if inpp=='1':
+        print(asknames())
+        names=input()
+        print (getName(names))
+
+# askAges()
+# ages=input()
+# getAge()
+    
+        print (askGender())
+        genders=input()
+        getGender(genders)
+        while genders==0:
+            print(sorry())
+            print (askGender())
+            genders=input()
+            print(getGender(genders))
+            
+        print(ask_symptoms())
+        symptoms=str (input())
+        print (getdisease(symptoms))
+            
+        print(note())
+    elif inpp=='2':
+        print ('This service will be available in the near future')
+    
+        
+        
+        
+# getdisease(' high fever and breathless and cough')
+        
+        
+        
