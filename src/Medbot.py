@@ -64,17 +64,17 @@ def greet():
     greeting=['hi','hello']  
     for i in greeting: 
         gr = random.choice (greeting)
-    messages = [gr,"I'm MedicalBot, your personal health assistant."]
+    messages = [gr,"I'm MedicalBot, your personal health assistant.\n I can do that for you : \n 1-diagnoses of illnesses. \n 2-Book intensive care unit. \n PLZ select number of service that you want : "]
     return messages
 # greet()
-    
+'''    
 def chosing ():
     messages1="I can do that for you :"
     messages2="1-diagnoses of illnesses."
     messages3="2-Book intensive care unit."
     messages4="PLZ select number of service that you want :"
     return messages1 , messages2  , messages3 , messages4
-    
+    '''
     
 
 def asknames():
@@ -431,12 +431,12 @@ def getdisease(symptoms):
     
     #print(('Name = %s , Age : = %s') %(i_name,i_age))
 
-    messages = [f"i predict you have {y_diagnosis[0]} disease, confidence score of : {y_pred_2.max()* 100}%",'this is info about your disease :',wikipedia.summary(wiki, sentences=2)]
+    messages = [f"i predict you have {y_diagnosis[0]} disease, confidence score of : {y_pred_2.max()* 100}%",'this is info about your disease :',wikipedia.summary(wiki, sentences=2),'note : \n Do not depend on this result .. Please see a doctor']
     return messages
 
-def note():
-    messages=['note : \n Do not depend on this result .. Please see a doctor']
-    return messages
+#def note():
+#    messages=['note : \n Do not depend on this result .. Please see a doctor']
+#    return messages
 
 # getdisease('cough and brethless and high fever')
 
@@ -469,7 +469,6 @@ elif inpp==2:
 
 if __name__=='__main__':
     print (greet())
-    print (chosing())
     inpp=str (input())
     if inpp=='1':
         print(asknames())
@@ -493,7 +492,7 @@ if __name__=='__main__':
         symptoms=str (input())
         print (getdisease(symptoms))
             
-        print(note())
+       
     elif inpp=='2':
         print ('This service will be available in the near future')
     
